@@ -2,102 +2,582 @@
   <ion-toolbar color="primary">
     <ion-title>Agenda de Contatos</ion-title>
   </ion-toolbar>
+
+  <ion-toolbar color="light">
+    <ion-searchbar
+      [(ngModel)]="termoBusca"
+      (ionInput)="filtrarContatos()"
+      placeholder="Pesquisar contato">
+    </ion-searchbar>
+  </ion-toolbar>
 </ion-header>
 
 <ion-content [fullscreen]="true" class="ion-padding">
-  
-  <!-- Barra de Pesquisa -->
-  <ion-searchbar [(ngModel)]="termoBusca" (ionInput)="filtrarContatos()" placeholder="Pesquisar"></ion-searchbar>
 
-  <!-- Lista de Contatos -->
-  <ion-list>
-    <ion-item *ngFor="let contato of contatosFiltrados">
-      <ion-avatar slot="start">
-        <ion-icon name="person-circle-outline" style="font-size: 40px; color: #3b4262;"></ion-icon>
-      </ion-avatar>
-      <ion-label>
-        <h2>{{ contato.nome }}</h2>
-        <p>{{ contato.telefone }}</p>
-        <p><small>Cat: {{ contato.categoria }}</small></p>
-      </ion-label>
+  <ion-card class="card-apresentacao">
+    <ion-card-content>
 
-      <!-- Ações rápidas no item -->
-      <ion-button fill="clear" (click)="ligar(contato)">
-        <ion-icon name="call-outline" color="primary"></ion-icon>
-      </ion-button>
-      
-      <ion-button fill="clear" (click)="alternarFavorito(contato)">
-        <ion-icon [name]="contato.favorito ? 'star' : 'star-outline'" [color]="contato.favorito ? 'warning' : 'medium'"></ion-icon>
-      </ion-button>
+      <div class="perfil-topo">
 
-      <ion-button fill="clear" (click)="editarContato(contato)">
-        <ion-icon name="create-outline" color="primary"></ion-icon>
-      </ion-button>
+        <ion-avatar class="avatar-perfil" (click)="abrirPerfil()">
+          <img *ngIf="perfil.foto" [src]="perfil.foto" alt="Minha foto">
+          <ion-icon
+            *ngIf="!perfil.foto"
+            name="person-circle-outline"
+            class="icone-contato">
+          </ion-icon>
+        </ion-avatar>
 
-      <ion-button fill="clear" color="danger" (click)="excluirContato(contato.id)">
-        <ion-icon name="trash-outline"></ion-icon>
-      </ion-button>
-    </ion-item>
-  </ion-list>
+        <h2>{{ perfil.nome || 'Minha Agenda' }}</h2>
+        <p>{{ perfil.frase || 'Seus contatos organizados em um só lugar.' }}</p>
 
-  <!-- Botão Flutuante (FAB) para Novo Contato -->
+        <div class="dados-perfil" *ngIf="perfil.telefone || perfil.email">
+          <p *ngIf="perfil.telefone">
+            <ion-icon name="call-outline"></ion-icon>
+            {{ perfil.telefone }}
+          </p>
+          <p *ngIf="perfil.email">
+            <ion-icon name="mail-outline"></ion-icon>
+            {{ perfil.email }}
+          </p>
+        </div>
+
+        <div class="chips-perfil">
+          <ion-chip color="primary">
+            <ion-icon name="people-outline"></ion-icon>
+            <ion-label>{{ contatos.length }} contatos</ion-label>
+          </ion-chip>
+
+          <ion-badge color="warning">
+            {{ contarFavoritos() }} favoritos
+          </ion-badge>
+        </div>
+
+        <ion-button
+          class="botao-perfil"
+          expand="block"
+          (click)="abrirPerfil()">
+          <ion-icon
+            [name]="temPerfil ? 'create-outline' : 'person-add-outline'"
+            slot="start">
+          </ion-icon>
+          {{ temPerfil ? 'Editar perfil completo' : 'Criar perfil' }}
+        </ion-button>
+
+      </div>
+
+    </ion-card-content>
+  </ion-card>
+
+  <div class="botoes-modo">
+    <ion-button
+      [fill]="!modoOrganizacao ? 'solid' : 'outline'"
+      (click)="modoOrganizacao = false">
+      <ion-icon name="list-outline" slot="start"></ion-icon>
+      Visualizar
+    </ion-button>
+
+    <ion-button
+      [fill]="modoOrganizacao ? 'solid' : 'outline'"
+      (click)="modoOrganizacao = true">
+      <ion-icon name="reorder-three-outline" slot="start"></ion-icon>
+      Organizar
+    </ion-button>
+  </div>
+
+  <ion-item lines="none">
+    <ion-label>
+      <h2>Seus contatos</h2>
+      <p>{{ contatosFiltrados.length }} resultado(s) encontrado(s)</p>
+    </ion-label>
+  </ion-item>
+
+  <div *ngIf="!modoOrganizacao">
+
+    <ion-list>
+      <ion-accordion-group [multiple]="false">
+
+        <ion-accordion
+          *ngFor="let contato of contatosFiltrados"
+          [value]="contato.id">
+
+          <ion-item slot="header" color="light">
+
+            <ion-avatar slot="start">
+              <img *ngIf="contato.foto" [src]="contato.foto" alt="Foto de {{ contato.nome }}">
+              <ion-icon
+                *ngIf="!contato.foto"
+                name="person-circle-outline"
+                class="icone-contato">
+              </ion-icon>
+            </ion-avatar>
+
+            <ion-label>
+              <h2>{{ contato.nome }}</h2>
+              <p>{{ contato.telefone }}</p>
+            </ion-label>
+
+            <ion-badge *ngIf="contato.favorito" color="warning">
+              Favorito
+            </ion-badge>
+
+          </ion-item>
+
+          <div slot="content">
+
+            <ion-card class="card-contato">
+              <ion-card-content>
+
+                <ion-chip color="primary">
+                  <ion-icon name="pricetag-outline"></ion-icon>
+                  <ion-label>{{ contato.categoria }}</ion-label>
+                </ion-chip>
+
+                <p>
+                  <strong>Telefone:</strong>
+                  {{ contato.telefone }}
+                </p>
+
+                <p>
+                  <strong>E-mail:</strong>
+                  {{ contato.email || 'Não informado' }}
+                </p>
+
+                <div class="estatisticas">
+
+                  <ion-card class="card-estatistica">
+                    <ion-card-content>
+                      <ion-icon name="call-outline" color="success"></ion-icon>
+                      <h2>{{ contato.ligacoesFeitas }}</h2>
+                      <p>Ligações realizadas</p>
+                    </ion-card-content>
+                  </ion-card>
+
+                  <ion-card class="card-estatistica">
+                    <ion-card-content>
+                      <ion-icon name="call" color="primary"></ion-icon>
+                      <h2>{{ contato.ligacoesRecebidas }}</h2>
+                      <p>Ligações recebidas</p>
+                    </ion-card-content>
+                  </ion-card>
+
+                </div>
+
+                <div class="resumo-ligacoes">
+
+                  <ion-chip color="success">
+                    <ion-icon name="call-outline"></ion-icon>
+                    <ion-label>
+                      Feitas: {{ contato.ligacoesFeitas }}
+                    </ion-label>
+                  </ion-chip>
+
+                  <ion-chip color="primary">
+                    <ion-icon name="call"></ion-icon>
+                    <ion-label>
+                      Recebidas: {{ contato.ligacoesRecebidas }}
+                    </ion-label>
+                  </ion-chip>
+
+                  <ion-badge color="tertiary">
+                    Total: {{ contato.ligacoesFeitas + contato.ligacoesRecebidas }}
+                  </ion-badge>
+
+                </div>
+
+                <div class="acoes-contato">
+
+                  <ion-button
+                    size="small"
+                    fill="outline"
+                    color="success"
+                    (click)="ligar(contato)">
+                    <ion-icon name="call-outline" slot="start"></ion-icon>
+                    Ligar
+                  </ion-button>
+
+                  <ion-button
+                    size="small"
+                    fill="outline"
+                    color="primary"
+                    (click)="registrarRecebida(contato)">
+                    <ion-icon name="call" slot="start"></ion-icon>
+                    Recebida
+                  </ion-button>
+
+                  <ion-button
+                    size="small"
+                    fill="outline"
+                    color="warning"
+                    (click)="alternarFavorito(contato)">
+                    <ion-icon
+                      [name]="contato.favorito ? 'star' : 'star-outline'"
+                      slot="start">
+                    </ion-icon>
+                    Favorito
+                  </ion-button>
+
+                  <ion-button
+                    size="small"
+                    fill="outline"
+                    (click)="editarContato(contato)">
+                    <ion-icon name="create-outline" slot="start"></ion-icon>
+                    Editar
+                  </ion-button>
+
+                  <ion-button
+                    class="botao-excluir"
+                    size="small"
+                    fill="outline"
+                    color="danger"
+                    (click)="excluirContato(contato.id)">
+                    <ion-icon name="trash-outline" slot="start"></ion-icon>
+                    Excluir
+                  </ion-button>
+
+                </div>
+
+              </ion-card-content>
+            </ion-card>
+
+          </div>
+
+        </ion-accordion>
+
+      </ion-accordion-group>
+    </ion-list>
+
+  </div>
+
+  <div *ngIf="modoOrganizacao">
+
+    <ion-card>
+      <ion-card-content>
+        <p>Segure o ícone ao lado do contato e arraste para mudar sua posição na agenda.</p>
+      </ion-card-content>
+    </ion-card>
+
+    <ion-list>
+      <ion-reorder-group
+        [disabled]="termoBusca.trim().length > 0"
+        (ionItemReorder)="reordenarContatos($event)">
+
+        <ion-item *ngFor="let contato of contatosFiltrados">
+
+          <ion-avatar slot="start">
+            <img *ngIf="contato.foto" [src]="contato.foto" alt="Foto de {{ contato.nome }}">
+            <ion-icon
+              *ngIf="!contato.foto"
+              name="person-circle-outline"
+              class="icone-contato">
+            </ion-icon>
+          </ion-avatar>
+
+          <ion-label>
+            <h2>{{ contato.nome }}</h2>
+            <p>{{ contato.telefone }}</p>
+          </ion-label>
+
+          <ion-badge color="primary">
+            {{ contato.ligacoesFeitas + contato.ligacoesRecebidas }} ligações
+          </ion-badge>
+
+          <ion-reorder slot="end"></ion-reorder>
+
+        </ion-item>
+
+      </ion-reorder-group>
+    </ion-list>
+
+    <ion-text color="medium" *ngIf="termoBusca.trim().length > 0">
+      <p class="aviso-organizacao">
+        Limpe a pesquisa para reorganizar todos os contatos.
+      </p>
+    </ion-text>
+
+  </div>
+
+  <ion-card *ngIf="contatosFiltrados.length === 0">
+    <ion-card-content>
+      <ion-icon name="people-outline" class="icone-vazio"></ion-icon>
+      <h2>Nenhum contato encontrado</h2>
+      <p>Cadastre um novo contato ou tente outra pesquisa.</p>
+    </ion-card-content>
+  </ion-card>
+
   <ion-fab vertical="bottom" horizontal="end" slot="fixed">
     <ion-fab-button (click)="abrirNovoContato()">
       <ion-icon name="add"></ion-icon>
     </ion-fab-button>
   </ion-fab>
 
-  <!-- TELA NOVA / MODAL DE CADASTRO E EDIÇÃO -->
-  <ion-modal [isOpen]="isModalOpen" (didDismiss)="fecharModal()">
+  <ion-modal
+    [isOpen]="isModalOpen"
+    (didDismiss)="fecharModal()">
+
     <ng-template>
+
       <ion-header>
         <ion-toolbar color="primary">
+
           <ion-buttons slot="start">
             <ion-button (click)="fecharModal()">
               <ion-icon name="arrow-back"></ion-icon>
             </ion-button>
           </ion-buttons>
-          <ion-title>{{ isEditMode ? 'Editar Contato' : 'Novo Contato' }}</ion-title>
+
+          <ion-title>
+            {{ isEditMode ? 'Editar Contato' : 'Novo Contato' }}
+          </ion-title>
+
         </ion-toolbar>
       </ion-header>
 
       <ion-content class="ion-padding">
+
+        <div class="area-foto">
+
+          <ion-avatar class="avatar-grande">
+            <img *ngIf="fotoInput" [src]="fotoInput" alt="Foto do contato">
+            <ion-icon
+              *ngIf="!fotoInput"
+              name="person-circle-outline"
+              class="icone-contato">
+            </ion-icon>
+          </ion-avatar>
+
+          <input
+            #arquivoFoto
+            type="file"
+            accept="image/*"
+            hidden
+            (change)="selecionarFoto($event, 'contato')">
+
+          <div class="botoes-foto">
+
+            <ion-button
+              size="small"
+              fill="outline"
+              (click)="arquivoFoto.click()">
+              <ion-icon name="camera-outline" slot="start"></ion-icon>
+              {{ fotoInput ? 'Trocar foto' : 'Adicionar foto' }}
+            </ion-button>
+
+            <ion-button
+              *ngIf="fotoInput"
+              size="small"
+              fill="outline"
+              color="danger"
+              (click)="removerFoto()">
+              <ion-icon name="trash-outline" slot="start"></ion-icon>
+              Remover
+            </ion-button>
+
+          </div>
+
+        </div>
+
         <ion-item>
-          <ion-input label="Nome" labelPlacement="stacked" [(ngModel)]="nomeInput" placeholder="Digite o nome"></ion-input>
           <ion-icon name="person-outline" slot="start" color="primary"></ion-icon>
+
+          <ion-input
+            label="Nome"
+            labelPlacement="stacked"
+            [(ngModel)]="nomeInput"
+            placeholder="Digite o nome">
+          </ion-input>
         </ion-item>
 
         <ion-item>
-          <ion-input label="Telefone" labelPlacement="stacked" [(ngModel)]="telefoneInput" placeholder="(00) 00000-0000" type="tel"></ion-input>
           <ion-icon name="call-outline" slot="start" color="primary"></ion-icon>
+
+          <ion-input
+            label="Telefone"
+            labelPlacement="stacked"
+            [(ngModel)]="telefoneInput"
+            placeholder="(00) 00000-0000"
+            type="tel">
+          </ion-input>
         </ion-item>
 
         <ion-item>
-          <ion-input label="E-mail" labelPlacement="stacked" [(ngModel)]="emailInput" placeholder="exemplo@email.com" type="email"></ion-input>
           <ion-icon name="mail-outline" slot="start" color="primary"></ion-icon>
+
+          <ion-input
+            label="E-mail"
+            labelPlacement="stacked"
+            [(ngModel)]="emailInput"
+            placeholder="exemplo@email.com"
+            type="email">
+          </ion-input>
         </ion-item>
 
         <ion-item>
-          <ion-select label="Categoria" labelPlacement="stacked" [(ngModel)]="categoriaInput">
+          <ion-icon name="pricetag-outline" slot="start" color="primary"></ion-icon>
+
+          <ion-select
+            label="Categoria"
+            labelPlacement="stacked"
+            [(ngModel)]="categoriaInput">
+
             <ion-select-option value="Geral">Geral</ion-select-option>
             <ion-select-option value="Família">Família</ion-select-option>
             <ion-select-option value="Amigos">Amigos</ion-select-option>
             <ion-select-option value="Trabalho">Trabalho</ion-select-option>
+
           </ion-select>
-          <ion-icon name="pricetag-outline" slot="start" color="primary"></ion-icon>
         </ion-item>
 
         <div class="ion-padding">
-          <ion-button expand="block" (click)="salvarContato()" color="primary">
+          <ion-button
+            expand="block"
+            (click)="salvarContato()"
+            color="primary">
+
             <ion-icon name="save-outline" slot="start"></ion-icon>
             Salvar Contato
+
           </ion-button>
         </div>
+
       </ion-content>
+
     </ng-template>
   </ion-modal>
 
-  <!-- Toast para mensagens -->
-  <ion-toast [isOpen]="isToastOpen" [message]="mensagemToast" duration="2000" (didDismiss)="isToastOpen = false"></ion-toast>
+  <ion-modal
+    [isOpen]="isPerfilModalOpen"
+    (didDismiss)="fecharPerfil()">
+
+    <ng-template>
+
+      <ion-header>
+        <ion-toolbar color="primary">
+
+          <ion-buttons slot="start">
+            <ion-button (click)="fecharPerfil()">
+              <ion-icon name="arrow-back"></ion-icon>
+            </ion-button>
+          </ion-buttons>
+
+          <ion-title>{{ temPerfil ? 'Meu Perfil' : 'Criar Perfil' }}</ion-title>
+
+        </ion-toolbar>
+      </ion-header>
+
+      <ion-content class="ion-padding">
+
+        <div class="area-foto">
+
+          <ion-avatar class="avatar-grande">
+            <img *ngIf="perfilFotoInput" [src]="perfilFotoInput" alt="Minha foto">
+            <ion-icon
+              *ngIf="!perfilFotoInput"
+              name="person-circle-outline"
+              class="icone-contato">
+            </ion-icon>
+          </ion-avatar>
+
+          <input
+            #arquivoFotoPerfil
+            type="file"
+            accept="image/*"
+            hidden
+            (change)="selecionarFoto($event, 'perfil')">
+
+          <div class="botoes-foto">
+
+            <ion-button
+              size="small"
+              fill="outline"
+              (click)="arquivoFotoPerfil.click()">
+              <ion-icon name="camera-outline" slot="start"></ion-icon>
+              {{ perfilFotoInput ? 'Trocar foto' : 'Adicionar foto' }}
+            </ion-button>
+
+            <ion-button
+              *ngIf="perfilFotoInput"
+              size="small"
+              fill="outline"
+              color="danger"
+              (click)="removerFotoPerfil()">
+              <ion-icon name="trash-outline" slot="start"></ion-icon>
+              Remover
+            </ion-button>
+
+          </div>
+
+        </div>
+
+        <ion-item>
+          <ion-icon name="person-outline" slot="start" color="primary"></ion-icon>
+
+          <ion-input
+            label="Seu nome"
+            labelPlacement="stacked"
+            [(ngModel)]="perfilNomeInput"
+            placeholder="Digite o seu nome">
+          </ion-input>
+        </ion-item>
+
+        <ion-item>
+          <ion-icon name="chatbubble-outline" slot="start" color="primary"></ion-icon>
+
+          <ion-input
+            label="Frase ou descrição"
+            labelPlacement="stacked"
+            [(ngModel)]="perfilFraseInput"
+            placeholder="Ex.: Organizando meus contatos">
+          </ion-input>
+        </ion-item>
+
+        <ion-item>
+          <ion-icon name="call-outline" slot="start" color="primary"></ion-icon>
+
+          <ion-input
+            label="Seu telefone"
+            labelPlacement="stacked"
+            [(ngModel)]="perfilTelefoneInput"
+            placeholder="(00) 00000-0000"
+            type="tel">
+          </ion-input>
+        </ion-item>
+
+        <ion-item>
+          <ion-icon name="mail-outline" slot="start" color="primary"></ion-icon>
+
+          <ion-input
+            label="Seu e-mail"
+            labelPlacement="stacked"
+            [(ngModel)]="perfilEmailInput"
+            placeholder="exemplo@email.com"
+            type="email">
+          </ion-input>
+        </ion-item>
+
+        <div class="ion-padding">
+          <ion-button
+            expand="block"
+            (click)="salvarPerfil()"
+            color="primary">
+
+            <ion-icon name="save-outline" slot="start"></ion-icon>
+            {{ temPerfil ? 'Salvar Perfil' : 'Criar Perfil' }}
+
+          </ion-button>
+        </div>
+
+      </ion-content>
+
+    </ng-template>
+  </ion-modal>
+
+  <ion-toast
+    [isOpen]="isToastOpen"
+    [message]="mensagemToast"
+    duration="2500"
+    position="bottom"
+    (didDismiss)="isToastOpen = false">
+  </ion-toast>
 
 </ion-content>
